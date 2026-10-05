@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cleanlink
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cleanlink_pass}
+      POSTGRES_DB: cleanlink
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cleanlink -d cleanlink"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://cleanlink:${DB_PASSWORD:-cleanlink_pass}@db:5432/cleanlink
+      DATABASE_SSL: "false"
+      JWT_SECRET: ${JWT_SECRET:?задайте JWT_SECRET (см. README)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@cleanlink.kz}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?задайте ADMIN_PASSWORD}
+      SEED_DEMO: "true"
+
+volumes:
+  pgdata:

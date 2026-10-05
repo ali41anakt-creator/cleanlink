@@ -1,0 +1,27 @@
+{
+  "name": "cleanlink-backend",
+  "version": "1.0.0",
+  "description": "CleanLink — backend API (Express + PostgreSQL + JWT) и фронтенд",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:init": "node src/scripts/init-db.js",
+    "db:upgrade": "node src/scripts/upgrade.js",
+    "db:reset": "node src/scripts/init-db.js --reset",
+    "test": "node test/regression.js",
+    "test:smoke": "node test/regression.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0"
+  }
+}
