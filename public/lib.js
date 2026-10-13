@@ -1,3 +1,4 @@
+import {favoriteButton} from './favorites.js';
 export const state = { user:null, csrf:'', categories:[], services:[], settings:{extras:[]}, notifications:[] };
 export const $ = (selector, parent=document) => parent.querySelector(selector);
 export const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -44,5 +45,5 @@ export function confirmAction(title,message,onConfirm) {
 }
 export function formError(form,error){const el=$('.form-error',form);if(el)el.textContent=error.message;else toast(error.message,true);}
 export function card(s) {
-  return `<article class="service-card"><a href="#/services/${s.id}" class="service-picture ${esc(s.category)}" aria-label="${esc(s.title)}"><img src="/assets/room.svg" alt="Светлая комната после уборки — иллюстрация" loading="lazy"><span class="picture-tag">${esc(categoryName(s.category))}</span><span class="picture-arrow">${icon('arrow')}</span></a><div class="service-body"><a href="#/services/${s.id}"><h3>${esc(s.title)}</h3></a><p>${esc(s.desc)}</p><div class="service-meta">${icon('clock')} ${esc(s.duration||minutes(s.durationMinutes))}<span>·</span>${icon('pin')} ${esc(s.city)}</div><div class="service-price"><div><small>от </small><strong>${money(s.price)}</strong></div><span class="rating">${s.reviews?`${icon('star')} ${Number(s.rating).toFixed(1)} <span class="muted">(${s.reviews})</span>`:'Пока без отзывов'}</span></div></div></article>`;
+  return `<article class="service-card">${favoriteButton(s.id)}<a href="#/services/${s.id}" class="service-picture ${esc(s.category)}" aria-label="${esc(s.title)}"><img src="/assets/room.svg" alt="Светлая комната после уборки — иллюстрация" loading="lazy"><span class="picture-tag">${esc(categoryName(s.category))}</span><span class="picture-arrow">${icon('arrow')}</span></a><div class="service-body"><a href="#/services/${s.id}"><h3>${esc(s.title)}</h3></a><p>${esc(s.desc)}</p><div class="service-meta">${icon('clock')} ${esc(s.duration||minutes(s.durationMinutes))}<span>·</span>${icon('pin')} ${esc(s.city)}</div><div class="service-price"><div><small>от </small><strong>${money(s.price)}</strong></div><span class="rating">${s.reviews?`${icon('star')} ${Number(s.rating).toFixed(1)} <span class="muted">(${s.reviews})</span>`:'Пока без отзывов'}</span></div></div></article>`;
 }

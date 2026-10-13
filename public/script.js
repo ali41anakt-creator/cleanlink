@@ -1,10 +1,12 @@
 import {state,$,esc,icon,api,toast,empty,card,dialog,closeDialog} from './lib.js';
-import {header,footer,home,catalog,detail,info,how,faq} from './pages.js';
+import {header,footer,home,catalog,detail,info,how,faq,favorites} from './pages.js';
 import {openBooking} from './booking.js';
 import {openAuth,dashboard,bindDashboard,accountAction} from './account.js';
 
+import {toggleFavorite, favoriteCount, hasFavorite, syncFavorites, FAVORITES_KEY} from './favorites.js';
+
 let routeTicket=0;
-function renderHeader(){ $('#header').innerHTML=header(); }
+function renderHeader(){ $('#header').innerHTML=header(); const current=(location.hash.slice(1)||'/').split('?')[0]; document.querySelectorAll('.desktop-nav a,.favorites-link').forEach(a=>{const active=a.getAttribute('href')==='#'+current;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');}); }
 async function refreshData(){
   const [services,categories,reviews]=await Promise.all([api('/services'),api('/categories'),api('/reviews/latest')]);
   state.services=services;state.categories=categories;state.reviews=reviews;
@@ -32,6 +34,7 @@ async function route(){
     let html;
     if(path==='/services'||path==='/catalog')html=catalog(params);
     else if(/^\/services\/\d+$/.test(path))html=detail(await api('/services/'+path.split('/')[2]));
+    else if(path==='/favorites')html=favorites();
     else if(path==='/account')html=await dashboard(params.get('tab')||'orders');
     else if(path==='/about'||path==='/terms'||path==='/privacy')html=info(path.slice(1));
     else if(path==='/how')html=`<div class="container section">${how()}</div>`;
@@ -39,7 +42,7 @@ async function route(){
     else if(path==='/')html=home();
     else html=`<div class="container section">${empty('Такой страницы нет','Вернитесь в каталог — там найдётся что-то подходящее.','<a class="btn" href="#/services">Открыть каталог</a>')}</div>`;
     if(ticket!==routeTicket)return;$('#main').innerHTML=html;
-    document.title=(path==='/services'?'Услуги':path==='/account'?'Личный кабинет':'Дома становится легче')+' — CleanLink';
+    document.title=(path==='/services'?'Услуги':path==='/favorites'?'Избранное':path==='/account'?'Личный кабинет':'Дома становится легче')+' — CleanLink';
     if(path==='/services'||path==='/catalog')bindCatalog(params);
     if(path==='/account')bindDashboard();
     const quick=$('#quick-search');if(quick)quick.onsubmit=e=>{e.preventDefault();location.hash='/services?'+new URLSearchParams(new FormData(quick));};
@@ -49,6 +52,7 @@ async function route(){
 document.addEventListener('click',async event=>{
   const button=event.target.closest('[data-action]');if(!button)return;const d=button.dataset;
   try{
+    if(d.action==='favorite'){const result=toggleFavorite(Number(d.id));updateFavoriteUI();toast(result.saved?(result.active?'Услуга добавлена в избранное':'Услуга удалена из избранного'):'Список изменён, но браузер не разрешил сохранить его после закрытия страницы.',!result.saved);return;}
     if(d.action==='close'){closeDialog();return;}
     if(d.action==='login'){openAuth(false);return;}
     if(d.action==='register'){openAuth(true);return;}
@@ -65,6 +69,12 @@ document.addEventListener('click',async event=>{
   }catch(error){toast(error.message,true);}
 });
 $('#dialog').addEventListener('click',event=>{if(event.target===$('#dialog')){const r=event.target.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closeDialog();}});
+function updateFavoriteUI(){
+  document.querySelectorAll('[data-action="favorite"]').forEach(button=>{const active=hasFavorite(Number(button.dataset.id));button.classList.toggle('is-favorite',active);button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-label',active?'Удалить из избранного':'Добавить в избранное');button.title=active?'Удалить из избранного':'Добавить в избранное';});
+  document.querySelectorAll('.favorite-count').forEach(el=>{el.textContent=favoriteCount();el.hidden=!favoriteCount();});
+  if((location.hash.split('?')[0])==='#/favorites'){const focused=document.activeElement;const id=focused?.dataset?.id;$('#main').innerHTML=favorites();if(id){const next=$('[data-action="favorite"]')||$('.favorites-page .btn');next?.focus();}}
+}
+window.addEventListener('storage',event=>{if(event.key===FAVORITES_KEY||event.key===null){syncFavorites();updateFavoriteUI();}});
 window.addEventListener('hashchange',route);
 window.addEventListener('login-needed',event=>openAuth(false,false,()=>openBooking(event.detail)));
 window.addEventListener('user-changed',async()=>{renderHeader();try{if(state.user)state.notifications=await api('/notifications');renderHeader();}catch{}});
